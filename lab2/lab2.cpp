@@ -22,21 +22,26 @@
 #include <gl/glu.h>
 #include <gl/glut.h>
 
+#include <iostream>
+#include <fstream>
+#include <vector>
+
 /* -- DATA STRUCTURES ---------------------------------------------------- */
 // Our point class.
-class GLintPoint {
+class GLfloatPoint {
 private:
-	GLint x, y;
+	GLfloat x, y;
 
 public:
-	GLintPoint() : x(0), y(0) { }
-	GLintPoint(GLint x, GLint y) : x(x), y(y) { }
+	GLfloatPoint() : x(0), y(0) { }
+	GLfloatPoint(GLfloat x, GLfloat y) : x(x), y(y) { }
 	void glVertex() {
-		glVertex2i(x, y);
+		glVertex2f(x, y);
 	}
 };
 
 /* -- GLOBAL VARIABLES --------------------------------------------------- */
+int g_iMode = 3;
 
 /* -- LOCAL VARIABLES ---------------------------------------------------- */
 
@@ -52,24 +57,57 @@ public:
 * Returns     : void
 */
 
-void drawDot(GLint x, GLint y) {
+void drawDot(GLfloat x, GLfloat y) {
 	glBegin(GL_POINTS);
-	glVertex2i(x, y);
+	glVertex2f(x, y);
 	glEnd();
 }
 
-void drawPolygon(GLint n, ...) {
+void drawPolygon(GLfloat n, ...) {
 	va_list vl;
 	va_start(vl, n);
 
 	glBegin(GL_POLYGON);
 
 	for (int i = 0; i < n; ++i) {
-		GLintPoint point = va_arg(vl, GLintPoint);
+		GLfloatPoint point = va_arg(vl, GLfloatPoint);
 		point.glVertex();
 	}
 
 	glEnd();
+}
+
+void drawPolyline(std::vector<GLfloatPoint> pts) {
+	glBegin(GL_LINE_STRIP);
+
+	for (size_t i = 0; i < pts.size(); ++i) {
+		pts[i].glVertex();
+	}
+
+	glEnd();
+}
+
+void drawPolylineFile(const char *file) {
+	std::ifstream fData(file);
+
+	if (!fData.bad()) {
+		int cnt;
+		fData >> cnt;
+
+		while (cnt--) {
+			int n;
+			fData >> n;
+			std::vector<GLfloatPoint> pts(n);
+			GLfloat x, y;
+
+			for (int i = 0; i < n; ++i) {
+				fData >> x >> y;
+				pts[i] = GLfloatPoint(x, y);
+			}
+
+			drawPolyline(pts);
+		}
+	}
 }
 
 /* ----------------------------------------------------------------------- */
@@ -86,10 +124,10 @@ void drawPolygon(GLint n, ...) {
 void myInit(void) {
 	glClearColor(1.0, 1.0, 1.0, 0.0);
 	glColor3f(0.0, 0.0, 0.0);
-	glPointSize(5.0);
+	glPointSize(1.0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluOrtho2D(0.0, 640.0, 480.0, 0.0);
+	gluOrtho2D(0.0, 800.0, 0.0, 600.0);
 }
 
 
@@ -106,13 +144,38 @@ void myInit(void) {
 
 void myDisplay(void) {
 	glClear(GL_COLOR_BUFFER_BIT);
-	drawDot(10, 10);
-	drawDot(20, 30);
-	drawDot(30, 50);
-	glColor3f(1.0, 0.0, 0.0);
-	drawPolygon(3, GLintPoint(100, 100), GLintPoint(300, 100), GLintPoint(200, 50));
-	glColor3f(0.0, 0.0, 1.0);
-	drawPolygon(4, GLintPoint(125, 100), GLintPoint(275, 100), GLintPoint(275, 200), GLintPoint(125, 200));
+
+	switch (g_iMode) {
+	case 1:
+		drawPolylineFile("dinosaur.dat");
+		break;
+	case 2:
+		for (int i = 0; i < 5; ++i) {
+			for (int j = 0; j < 5; ++j) {
+				glViewport(160 * i, 120 * j, 160, 120);
+				drawPolylineFile("dinosaur.dat");
+			}
+		}
+		break;
+	case 3:
+		for (int i = 0; i < 5; ++i) {
+			for (int j = 0; j < 5; ++j) {
+				glMatrixMode(GL_PROJECTION);
+				glLoadIdentity();
+
+				if ((i + j) % 2) {
+					gluOrtho2D(0.0, 800.0, 0.0, 600.0);
+				} else {
+					gluOrtho2D(0.0, 800.0, 600.0, 0.0);
+				}
+
+				glViewport(160 * i, 120 * j, 160, 120);
+				drawPolylineFile("dinosaur.dat");
+			}
+		}
+		break;
+	}
+
 	glFlush();
 }
 
@@ -135,9 +198,9 @@ int main(int argc, char *argv[]) {
 	// Set the mode to draw in.
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	// Set the window size in screen pixels.
-	glutInitWindowSize(640, 480);
+	glutInitWindowSize(800, 600);
 	// Set the window position in screen pixels.
-	glutInitWindowPosition(100, 150);
+	glutInitWindowPosition(0, 0);
 	// Create the window.
 	glutCreateWindow("Lab");
 	// Set the callback funcion to call when we need to draw something.
