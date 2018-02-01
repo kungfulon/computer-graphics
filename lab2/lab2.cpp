@@ -22,6 +22,7 @@
 #include <gl/glu.h>
 #include <gl/glut.h>
 
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -41,7 +42,7 @@ public:
 };
 
 /* -- GLOBAL VARIABLES --------------------------------------------------- */
-int g_iMode = 3;
+int g_iMode;
 
 /* -- LOCAL VARIABLES ---------------------------------------------------- */
 
@@ -110,6 +111,28 @@ void drawPolylineFile(const char *file) {
 	}
 }
 
+void plotFunction(GLfloat (*f)(GLfloat)) {
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluOrtho2D(-10.0, 10.0, -10.0, 10.0);
+	std::vector<GLfloatPoint> pts(2000);
+	GLfloat x = -10.0;
+
+	for (int i = 0; i < 2000; ++i, x += 0.01) {
+		pts[i] = GLfloatPoint(x, f(x));
+	}
+
+	drawPolyline(pts);
+}
+
+GLfloat func1(GLfloat x) {
+	return x * x * x + 2.0 * x * x + 3.0;
+}
+
+GLfloat func2(GLfloat x) {
+	return 2.0 * sin(x) + 0.5 * cos(x);
+}
+
 /* ----------------------------------------------------------------------- */
 /* Function    : void myInit( void )
 *
@@ -129,7 +152,6 @@ void myInit(void) {
 	glLoadIdentity();
 	gluOrtho2D(0.0, 800.0, 0.0, 600.0);
 }
-
 
 /* ----------------------------------------------------------------------- */
 /* Function    : void myDisplay( void )
@@ -174,6 +196,12 @@ void myDisplay(void) {
 			}
 		}
 		break;
+	case 4:
+		plotFunction(func1);
+		break;
+	case 5:
+		plotFunction(func2);
+		break;
 	}
 
 	glFlush();
@@ -193,6 +221,9 @@ void myDisplay(void) {
 */
 
 int main(int argc, char *argv[]) {
+	std::cout << "1: Draw dinosaur.dat\n2: Draw tiled dinosaur.dat\n3: Draw tiled dinosaur.dat (with flip)\n4: Plot function y = x^3 + 2*x^2 + 3\n5: Plot function y = 2*sin(x) + 0.5*cos(x)\nEnter your choice: ";
+	std::cin >> g_iMode;
+
 	// Initialize GLUT.
 	glutInit(&argc, argv);
 	// Set the mode to draw in.
@@ -212,4 +243,3 @@ int main(int argc, char *argv[]) {
 }
 
 /* ----------------------------------------------------------------------- */
-
